@@ -1,20 +1,20 @@
-name: Build Windows EXE
+name: Build Windows and macOS packages
 
 # Builds Parquetto.exe on an actual Windows runner (PyInstaller can't
 # cross-compile, so this has to run on windows-latest, not Linux/macOS).
 #
-# - Push a tag like "v1.0.0" -> builds the exe AND creates/updates a
-#   GitHub Release with the exe attached, so anyone can download it from
-#   the Releases page without installing Python.
+# - Publish a GitHub Release for a tag like "v1.0.0" -> builds the Windows
+#   exe and macOS app, then attaches both to that release.
 # - Any other push/PR, or manually via "Run workflow" -> just builds the
 #   exe and uploads it as a workflow artifact, for testing.
 
 on:
   push:
     branches: [main]
-    tags: ["v*"]
   pull_request:
     branches: [main]
+  release:
+    types: [published]
   workflow_dispatch:
 
 permissions:
@@ -44,17 +44,59 @@ jobs:
           main.py
 
       - name: Upload build artifact
-        if: "!startsWith(github.ref, 'refs/tags/')"
+        if: github.event_name != 'release'
         uses: actions/upload-artifact@v4
         with:
           name: Parquetto-windows
           path: dist/Parquetto.exe
 
       - name: Attach to GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
+        if: github.event_name == 'release'
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.event.release.tag_name }}
           files: |
             dist/Parquetto.exe
+          fail_on_unmatched_files: true
+          overwrite_files: true
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build app
+        run: |
+          pyinstaller --onefile --windowed --name Parquetto \
+            --icon assets/icon.icns \
+            --add-data "assets/icon_128.png:assets" \
+            main.py
+          ditto -c -k --sequesterRsrc --keepParent \
+            dist/Parquetto.app dist/Parquetto-macos.zip
+
+      - name: Upload build artifact
+        if: github.event_name != 'release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Parquetto-macos
+          path: dist/Parquetto-macos.zip
+
+      - name: Attach to GitHub Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.release.tag_name }}
+          files: |
+            dist/Parquetto-macos.zip
           fail_on_unmatched_files: true
           overwrite_files: true
