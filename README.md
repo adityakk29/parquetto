@@ -24,14 +24,18 @@ runs on Python's built-in `sqlite3` combined with `pandas.DataFrame.to_sql`
 
 ## Download the exe (no Python required)
 
-Every push to `main` and every tagged release builds `Parquetto.exe`
-automatically via GitHub Actions (see `.github/workflows/build.yml`).
+Every push to `main` and every tagged release builds Windows and macOS
+packages automatically via GitHub Actions (see
+`.github/workflows/build.yml`).
 
-- **Tagged release** (e.g. `v1.0.0`): grab `Parquetto.exe` from the
-  [Releases](../../releases) page.
+- **Tagged release** (e.g. `v1.0.0`): grab `Parquetto.exe` or
+  `Parquetto-macos.zip` from the [Releases](../../releases) page.
 - **Latest build off `main`**: go to the **Actions** tab, open the newest
-  successful "Build Windows EXE" run, and download the
-  `Parquetto-windows` artifact.
+  successful build run, and download either the `Parquetto-windows` or
+  `Parquetto-macos` artifact.
+
+The macOS download is a zip file containing `Parquetto.app`. Extract it,
+then open the app from Finder.
 
 Just double-click the exe — no install, no Python needed.
 
@@ -93,6 +97,14 @@ build_exe.bat
 ```
 
 This installs `pyinstaller` and produces `dist\Parquetto.exe`.
+
+On macOS, run:
+
+```bash
+bash build_mac.sh
+```
+
+This installs `pyinstaller` and produces `dist/Parquetto.app`.
 
 ## Repo structure
 
